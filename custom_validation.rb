@@ -30,13 +30,17 @@ end
 
 class CustomModel
   include SavedValidation
+  include ActiveModel::Attributes
 
-  attr_accessor :id, :name
+  attribute :id, :integer, default: 0
+  attribute :name, :string, default: ''
 
-  validates :id, presence: true, numericality: { only_integer: true }
+  validates :id, presence: true,
+                 numericality: { only_integer: true, greater_than: 0 }
   validates :name, presence: true
 
   def initialize(&saver)
+    super
     @save_impl = saver
   end
 end
@@ -46,16 +50,20 @@ obj = CustomModel.new do |data|
   # model_name: ActiveModel::Naming
   puts "Save: #{data.to_param} for #{data.model_name.name}"
 end
-obj.id = 1
+obj.id = '1' # cast to integer with ActiveSupport::Attributes
 obj.name = 'Bob'
 obj.save # valid; call save_impl
 
-obj.id = 'a'
+obj = CustomModel.new do |data|
+  puts "Save: #{data.to_param} for #{data.model_name.name}"
+end
+
+# obj.id is default value: 0
 obj.name = 'Alice'
 obj.save # invalid; do not call save_impl
 
 obj = CustomModel.new { |data| puts "Hello! #{data.name}" }
-obj.id = 2
+obj.id = 3
 obj.name = 'John'
 obj.save # valid; call save_impl with Hello!
 
